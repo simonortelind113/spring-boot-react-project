@@ -1,10 +1,14 @@
 package com.example.backend;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class Account {
@@ -14,22 +18,24 @@ public class Account {
     private Long id;
 
     private String ownerName;
-    private BigDecimal balance;
+    private BigDecimal balance = BigDecimal.ZERO;
 
-    protected Account(){
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
+    private List<Transaction> transactions = new ArrayList<>();
+
+    public Account(){
 
     }
 
-    public Account(String ownerName){
-        this.ownerName = ownerName;
-        this.balance = BigDecimal.ZERO;
+    public void setBalance(BigDecimal balance){
+        this.balance = balance;
     }
 
     public BigDecimal getBalance(){
         return balance;
     }
 
-    public void deposit(BigDecimal amount){
-        this.balance = this.balance.add(amount);
+    public void setOwnerName(String ownerName){
+        this.ownerName = ownerName;
     }
 }
