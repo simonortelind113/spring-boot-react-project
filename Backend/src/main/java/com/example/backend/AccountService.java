@@ -2,6 +2,7 @@ package com.example.backend;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.math.BigDecimal;
 
@@ -16,6 +17,7 @@ public class AccountService {
         this.transactionRepo = transactionRepo;
     }
 
+@PostMapping
     public Account createAccount(String ownerName) {
         Account account = new Account();
         account.setOwnerName(ownerName);

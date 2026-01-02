@@ -1,8 +1,9 @@
+// src/App.js
 import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
-import CreateAccountPage from "./components/CreateAccountPage"; // you will create this
-import Dashboard from "./components/Dashboard"; // main app after login
+import CreateAccountPage from "./components/CreateAccountPage";
+import Dashboard from "./components/Dashboard";
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -10,40 +11,22 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Login page */}
+        {/* Login Page */}
         <Route
           path="/"
-          element={
-            account ? (
-              <Navigate to="/dashboard" />
-            ) : (
-              <Login onLogin={setAccount} />
-            )
-          }
+          element={account ? <Navigate to="/dashboard" /> : <Login onLogin={setAccount} />}
         />
 
-        {/* Create Account page */}
+        {/* Create Account Page */}
         <Route
           path="/create-account"
-          element={
-            account ? (
-              <Navigate to="/dashboard" />
-            ) : (
-              <CreateAccountPage onLogin={setAccount} />
-            )
-          }
+          element={account ? <Navigate to="/dashboard" /> : <CreateAccountPage onLogin={setAccount} />}
         />
 
-        {/* Dashboard */}
+        {/* Dashboard Page */}
         <Route
           path="/dashboard"
-          element={
-            account ? (
-              <Dashboard account={account} onLogout={() => setAccount(null)} />
-            ) : (
-              <Navigate to="/" />
-            )
-          }
+          element={account ? <Dashboard account={account} onLogout={() => setAccount(null)} /> : <Navigate to="/" />}
         />
       </Routes>
     </Router>
