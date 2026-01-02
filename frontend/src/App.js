@@ -25,7 +25,7 @@ function App() {
 
         {/* Dashboard Page */}
         <Route
-          path="/dashboard"
+          path="/"
           element={account ? <Dashboard account={account} onLogout={() => setAccount(null)} /> : <Navigate to="/" />}
         />
       </Routes>

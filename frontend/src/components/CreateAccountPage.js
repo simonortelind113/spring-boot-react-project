@@ -11,28 +11,21 @@ function CreateAccountPage({ onLogin }) {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-
+  
     if (!ownerName) {
       setError("Owner Name is required");
       return;
     }
-
+  
     try {
-      // call backend to create account
-      const response = await api.post(`/accounts?ownerName=${ownerName}`);
-      const newAccount = response.data;
-
-      // optionally you could send password in future
-      // newAccount.password = password;
-
-      onLogin(newAccount); // set account in App.js state
-      navigate("/dashboard"); // go to dashboard page
+      await api.post(`/accounts?ownerName=${ownerName}`);
+      navigate("/login"); // gowhat do i nee to login page
     } catch (err) {
-      //console.error(err);
-      //setError("Failed to create account. Maybe the name is taken.");
-        console.error("Axios error:", err.response || err);
+      console.error(err);
+      setError("Failed to create account.");
     }
   };
+  
 
   return (
     <div

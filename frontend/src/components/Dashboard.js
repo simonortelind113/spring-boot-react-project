@@ -1,17 +1,20 @@
-// src/components/Dashboard.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AccountDetails from "./AccountDetails";
 import TransactionHistory from "./TransactionHistory";
 
-
 function Dashboard({ account, onLogout }) {
   const [currentAccount, setCurrentAccount] = useState(account);
+
+  useEffect(() => {
+    setCurrentAccount(account);
+  }, [account]);
+
+  if (!currentAccount) return null;
 
   return (
     <div style={{ maxWidth: "800px", margin: "20px auto", padding: "20px", backgroundColor: "#f5f5f5", borderRadius: "10px" }}>
       <h1>Welcome, {currentAccount.ownerName}!</h1>
 
-      {/* Logout button */}
       <button
         onClick={onLogout}
         style={{
@@ -27,17 +30,14 @@ function Dashboard({ account, onLogout }) {
         Logout
       </button>
 
-      {/* Account Details */}
       <div style={{ marginBottom: "30px" }}>
         <AccountDetails account={currentAccount} setAccount={setCurrentAccount} />
       </div>
 
-      {/* Transaction History */}
-      <div>
-        <TransactionHistory account={currentAccount} />
-      </div>
+      <TransactionHistory account={currentAccount} />
     </div>
   );
 }
 
 export default Dashboard;
+
