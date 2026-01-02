@@ -1,10 +1,10 @@
 package com.example.backend;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 
@@ -50,16 +50,19 @@ public class AccountController {
         return new String();
     }
     
-
-    @GetMapping("/test")
-    public String test() {
-        return "Bellik is the best ever!!!";
-    }
     @GetMapping("/{id}/transactions")
     public List<Transaction> getTransactions(@PathVariable Long id) {
         return transactionRepository.findByAccountId(id);
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<Account> login(@RequestParam String ownerName) {
+        Account account = service.getAccountByOwner(ownerName); 
+        if (account == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return ResponseEntity.ok(account);
+    }
     
 }
 

@@ -22,6 +22,10 @@ public class AccountService {
         return accountRepo.save(account);
     }
 
+    public Account getAccountByOwner(String ownerName) {
+        return accountRepo.findByOwnerName(ownerName).orElse(null);
+    }    
+
     public Account deposit(Long accountId, BigDecimal amount) {
         Account account = accountRepo.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));

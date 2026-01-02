@@ -1,15 +1,52 @@
-import CreateAccount from "./components/CreateAccount";
-import AccountDetails from "./components/AccountDetails";
-import TransactionHistory from "./components/TransactionHistory";
+import { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./components/Login";
+import CreateAccountPage from "./components/CreateAccountPage"; // you will create this
+import Dashboard from "./components/Dashboard"; // main app after login
 
 function App() {
+  const [account, setAccount] = useState(null);
+
   return (
-    <div className="App">
-      <h1>Banking App</h1>
-      <CreateAccount />
-      <AccountDetails />
-      <TransactionHistory />
-    </div>
+    <Router>
+      <Routes>
+        {/* Login page */}
+        <Route
+          path="/"
+          element={
+            account ? (
+              <Navigate to="/dashboard" />
+            ) : (
+              <Login onLogin={setAccount} />
+            )
+          }
+        />
+
+        {/* Create Account page */}
+        <Route
+          path="/create-account"
+          element={
+            account ? (
+              <Navigate to="/dashboard" />
+            ) : (
+              <CreateAccountPage onLogin={setAccount} />
+            )
+          }
+        />
+
+        {/* Dashboard */}
+        <Route
+          path="/dashboard"
+          element={
+            account ? (
+              <Dashboard account={account} onLogout={() => setAccount(null)} />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
