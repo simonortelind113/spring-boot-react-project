@@ -64,7 +64,6 @@ public class AccountService {
         return accountRepo.findById(id)
             .orElseThrow(() -> new RuntimeException("Account not found"));
     }
-
 }
 
 

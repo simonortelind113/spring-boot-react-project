@@ -26,6 +26,25 @@ public class Transaction {
 
     }
 
+    //--GETTERS--
+
+    public Long getId(){
+        return id;
+    }
+
+    public BigDecimal getAmount(){
+        return amount;
+    }
+
+    public String getType(){
+        return type;
+    }
+    public LocalDateTime getCreatedAt(){
+        return timestamp;
+    }
+
+    //--SETTERS--
+
     public void setAmount(BigDecimal amount){
         this.amount = amount;
     }

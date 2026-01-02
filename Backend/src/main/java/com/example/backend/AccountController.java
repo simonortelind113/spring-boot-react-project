@@ -2,8 +2,10 @@ package com.example.backend;
 
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import java.util.List;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 
 @RestController
@@ -11,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class AccountController {
 
     private final AccountService service;
+    private final TransactionRepository transactionRepository;
 
-    public AccountController(AccountService service) {
+    public AccountController(AccountService service, TransactionRepository transactionRepository) {
         this.service = service;
+        this.transactionRepository = transactionRepository;
     }
 
     @PostMapping
@@ -51,6 +55,11 @@ public class AccountController {
     public String test() {
         return "Bellik is the best ever!!!";
     }
+    @GetMapping("/{id}/transactions")
+    public List<Transaction> getTransactions(@PathVariable Long id) {
+        return transactionRepository.findByAccountId(id);
+    }
+
     
 }
 
