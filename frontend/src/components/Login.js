@@ -1,5 +1,5 @@
 // src/components/Login.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 
@@ -9,28 +9,32 @@ function Login({ onLogin }) {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  useEffect(() => {
+    api.get("/accounts/2")
+      .then(res => console.log("API reachable:", res.data))
+      .catch(err => console.error("API unreachable:", err));
+  }, []);
+  
+
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     if (!ownerName || !password) {
       setError("Owner Name and Password are required");
       return;
     }
-
+  
     try {
-      // Call backend login endpoint (we only check ownerName for now)
-      const response = await api.post(`/login?ownerName=${ownerName}`);
+      const response = await api.post("/accounts/login", { ownerName, password });
       const account = response.data;
-
-      // In the future, you can check password here
       onLogin(account); // sets account in App state
       navigate("/dashboard");
     } catch (err) {
       console.error(err);
-      setError("Login failed. Account not found.");
+      setError("Login failed. Account not found or wrong password.");
     }
   };
-
+  
   const goToCreateAccount = () => {
     navigate("/create-account"); // navigate to account creation page
   };

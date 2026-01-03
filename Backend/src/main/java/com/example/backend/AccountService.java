@@ -18,12 +18,13 @@ public class AccountService {
     }
 
 @PostMapping
-public Account createAccount(String ownerName) {
+public Account createAccount(String ownerName, String password) {
     if (accountRepo.existsByOwnerName(ownerName)) {
         throw new RuntimeException("Owner name already exists");
     }
     Account account = new Account();
     account.setOwnerName(ownerName);
+    account.setPassword(password);
     return accountRepo.save(account);
 }
 

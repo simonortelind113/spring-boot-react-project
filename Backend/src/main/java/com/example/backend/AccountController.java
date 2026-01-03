@@ -23,7 +23,8 @@ public class AccountController {
     @PostMapping
     public Account createAccount(@RequestBody Map<String, String> body) {
         String ownerName = body.get("ownerName");
-        return service.createAccount(ownerName);
+        String password = body.get("password");
+        return service.createAccount(ownerName, password);
     }
     
 
@@ -46,15 +47,24 @@ public class AccountController {
     public List<Transaction> getTransactions(@PathVariable Long id) {
         return transactionRepository.findByAccountId(id);
     }
- 
     @PostMapping("/login")
-    public ResponseEntity<Account> login(@RequestParam String ownerName) {
+    public ResponseEntity<Account> login(@RequestBody Map<String, String> body) {
+        String ownerName = body.get("ownerName");
+        String password = body.get("password");
+    
         Account account = service.getAccountByOwner(ownerName);
+    
         if (account == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
+    
+        // Trim and compare to avoid invisible spaces
+        if (!account.getPassword().trim().equals(password.trim())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    
         return ResponseEntity.ok(account);
-    }
+    }    
 }
 
 

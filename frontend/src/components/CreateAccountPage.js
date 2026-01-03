@@ -5,26 +5,27 @@ import api from "../api/api"; // make sure this points to your api.js
 
 function CreateAccountPage({ onLogin }) {
   const [ownerName, setOwnerName] = useState("");
-  const [password, setPassword] = useState(""); // optional for now
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate(); // allows navigation after creation
-
+  
   const handleCreate = async (e) => {
     e.preventDefault();
   
-    if (!ownerName) {
-      setError("Owner Name is required");
+    if (!ownerName || !password) {
+      setError("Owner Name and Password are required");
       return;
     }
   
     try {
-        await api.post("/accounts", { ownerName });
-        navigate("/login"); // gowhat do i nee to login page
+      await api.post("/accounts", { ownerName, password }); // send password
+      navigate("/login"); // go to login page
     } catch (err) {
       console.error(err);
       setError("Failed to create account.");
     }
   };
+  
   
 
   return (
@@ -49,7 +50,7 @@ function CreateAccountPage({ onLogin }) {
         />
         <input
           type="password"
-          placeholder="Password (optional)"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={{ padding: "8px", marginBottom: "10px" }}
