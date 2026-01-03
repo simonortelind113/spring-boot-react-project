@@ -18,15 +18,19 @@ public class AccountService {
     }
 
 @PostMapping
-    public Account createAccount(String ownerName) {
-        Account account = new Account();
-        account.setOwnerName(ownerName);
-        return accountRepo.save(account);
+public Account createAccount(String ownerName) {
+    if (accountRepo.existsByOwnerName(ownerName)) {
+        throw new RuntimeException("Owner name already exists");
     }
+    Account account = new Account();
+    account.setOwnerName(ownerName);
+    return accountRepo.save(account);
+}
 
-    public Account getAccountByOwner(String ownerName) {
-        return accountRepo.findByOwnerName(ownerName).orElse(null);
-    }    
+public Account getAccountByOwner(String ownerName) {
+    return accountRepo.findByOwnerName(ownerName);
+}
+
 
     public Account deposit(Long accountId, BigDecimal amount) {
         Account account = accountRepo.findById(accountId)

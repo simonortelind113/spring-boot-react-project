@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -20,9 +21,11 @@ public class AccountController {
     }
 
     @PostMapping
-    public Account createAccount(@RequestParam String ownerName) {
+    public Account createAccount(@RequestBody Map<String, String> body) {
+        String ownerName = body.get("ownerName");
         return service.createAccount(ownerName);
     }
+    
 
     @PostMapping("/{id}/deposit")
     public Account deposit(@PathVariable Long id, @RequestParam BigDecimal amount) {

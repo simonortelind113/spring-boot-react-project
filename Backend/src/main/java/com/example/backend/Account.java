@@ -18,9 +18,10 @@ public class Account {
     @GeneratedValue
     private Long id;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String ownerName;
     
+    @Column(nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)

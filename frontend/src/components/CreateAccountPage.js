@@ -18,8 +18,8 @@ function CreateAccountPage({ onLogin }) {
     }
   
     try {
-      await api.post(`/accounts?ownerName=${ownerName}`);
-      navigate("/login"); // gowhat do i nee to login page
+        await api.post("/accounts", { ownerName });
+        navigate("/login"); // gowhat do i nee to login page
     } catch (err) {
       console.error(err);
       setError("Failed to create account.");
