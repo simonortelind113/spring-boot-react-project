@@ -19,14 +19,22 @@ public class AccountController {
         this.service = service;
         this.transactionRepository = transactionRepository;
     }
-
+   
     @PostMapping
-    public Account createAccount(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> createAccount(@RequestBody Map<String, String> body) {
         String ownerName = body.get("ownerName");
         String password = body.get("password");
-        return service.createAccount(ownerName, password);
-    }
     
+        Account account = service.createAccount(ownerName, password);
+    
+        if (account == null) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Owner name already exists");
+        }
+    
+        return ResponseEntity.ok(account);
+    }
 
     @PostMapping("/{id}/deposit")
     public Account deposit(@PathVariable Long id, @RequestParam BigDecimal amount) {

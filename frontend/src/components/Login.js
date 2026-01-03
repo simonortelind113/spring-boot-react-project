@@ -1,5 +1,5 @@
 // src/components/Login.js
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 
@@ -8,13 +8,6 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
-  useEffect(() => {
-    api.get("/accounts/2")
-      .then(res => console.log("API reachable:", res.data))
-      .catch(err => console.error("API unreachable:", err));
-  }, []);
-  
 
   const handleLogin = async (e) => {
     e.preventDefault();
