@@ -23,8 +23,13 @@ function Login({ onLogin }) {
       onLogin(account); // sets account in App state
       navigate("/dashboard");
     } catch (err) {
-      console.error(err);
-      setError("Login failed. Account not found or wrong password.");
+        console.log("--- DEBUG START ---");
+        console.log("Status Code:", err.response?.status); // e.g. 400, 404, 500
+        console.log("Server Message:", err.response?.data); // The message from your backend
+        console.log("Full Error Object:", err);
+        console.log("--- DEBUG END ---");
+        // -------------------------------
+        setError("Login failed. Check the console for details.");
     }
   };
   
