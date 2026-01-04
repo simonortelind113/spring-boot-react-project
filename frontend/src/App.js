@@ -1,4 +1,3 @@
-// src/App.js
 import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/Login";
@@ -11,23 +10,32 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Login Page */}
+
+        {/* Login */}
         <Route
-          path="/"
-          element={account ? <Navigate to="/dashboard" /> : <Login onLogin={setAccount} />}
+          path="/login"
+          element={<Login onLogin={setAccount} />}
         />
 
-        {/* Create Account Page */}
+        {/* Create Account */}
         <Route
           path="/create-account"
-          element={account ? <Navigate to="/dashboard" /> : <CreateAccountPage onLogin={setAccount} />}
+          element={<CreateAccountPage />}
         />
 
-        {/* Dashboard Page */}
+        {/* Dashboard (protected) */}
         <Route
-          path="/"
-          element={account ? <Dashboard account={account} onLogout={() => setAccount(null)} /> : <Navigate to="/" />}
+          path="/dashboard"
+          element={
+            account
+              ? <Dashboard account={account} onLogout={() => setAccount(null)} />
+              : <Navigate to="/login" />
+          }
         />
+
+        {/* Default redirect */}
+        <Route path="*" element={<Navigate to="/login" />} />
+
       </Routes>
     </Router>
   );

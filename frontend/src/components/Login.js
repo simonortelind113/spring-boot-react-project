@@ -28,7 +28,6 @@ function Login({ onLogin }) {
         console.log("Server Message:", err.response?.data); // The message from your backend
         console.log("Full Error Object:", err);
         console.log("--- DEBUG END ---");
-        // -------------------------------
         setError("Login failed. Check the console for details.");
     }
   };

@@ -19,7 +19,7 @@ function CreateAccountPage({ onLogin }) {
   
     try {
       await api.post("/accounts", { ownerName, password }); // send password
-      navigate("/login"); // go to login page
+      navigate("/login");
     } catch (err) {
       console.error(err);
       setError("Failed to create account.");
