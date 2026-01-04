@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class AccountService {
@@ -17,7 +18,6 @@ public class AccountService {
         this.transactionRepo = transactionRepo;
     }
 
-@PostMapping
 public Account createAccount(String ownerName, String password) {
     if (accountRepo.existsByOwnerName(ownerName)) {
         return null; 
@@ -26,6 +26,16 @@ public Account createAccount(String ownerName, String password) {
     account.setOwnerName(ownerName);
     account.setPassword(password);
     return accountRepo.save(account);
+}
+
+@Transactional
+public boolean deleteAccount(Long id) {
+    if (accountRepo.existsById(id)) {
+        transactionRepo.deleteByAccountId(id); 
+        accountRepo.deleteById(id);
+        return true;
+    }
+    return false;
 }
 
 public Account getAccountByOwner(String ownerName) {
@@ -74,6 +84,11 @@ public Account getAccountByOwner(String ownerName) {
     public Account getAccount(Long id){
         return accountRepo.findById(id)
             .orElseThrow(() -> new RuntimeException("Account not found"));
+    }   
+
+
+    public List<Account> getAllAccounts() {
+        return accountRepo.findAll();
     }
 }
 

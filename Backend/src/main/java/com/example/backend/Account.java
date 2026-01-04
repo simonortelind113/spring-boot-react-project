@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,11 +31,15 @@ public class Account {
     @Column(name = "balance", nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     private List<Transaction> transactions = new ArrayList<>();
 
+    @Column(name = "manager", nullable = false)
+    private boolean manager = false;
+
     public Account(){
-        
+
     }
 
     public void setBalance(BigDecimal balance){
@@ -46,6 +52,7 @@ public class Account {
     public void setPassword(String password){
         this.password = password;
     }
+    public void setManager(boolean manager) { this.manager = manager; }
 
     public BigDecimal getBalance(){
         return balance;
@@ -63,5 +70,5 @@ public class Account {
         return id;
     }
    
-
+    public boolean isManager() { return manager; }
 }
