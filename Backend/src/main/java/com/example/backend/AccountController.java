@@ -2,6 +2,7 @@ package com.example.backend;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,10 +15,12 @@ public class AccountController {
 
     private final AccountService service;
     private final TransactionRepository transactionRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    public AccountController(AccountService service, TransactionRepository transactionRepository) {
+    public AccountController(AccountService service, TransactionRepository transactionRepository, BCryptPasswordEncoder passwordEncoder) {
         this.service = service;
         this.transactionRepository = transactionRepository;
+        this.passwordEncoder = passwordEncoder;
     }
    
     @PostMapping
@@ -61,24 +64,18 @@ public class AccountController {
     String ownerName = body.get("ownerName");
     String password = body.get("password");
 
-    // 1. Check if input is null
     if (ownerName == null || password == null) {
         return ResponseEntity.badRequest().body("Missing credentials");
     }
 
     Account account = service.getAccountByOwner(ownerName);
 
-    // 2. Safe check if account exists
     if (account == null) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account not found");
     }
-
-    // 3. Safe password check
-    String storedPassword = account.getPassword() != null ? account.getPassword().trim() : "";
-    if (!storedPassword.equals(password.trim())) {
+    if (!passwordEncoder.matches(password, account.getPassword())) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password");
     }
-
     return ResponseEntity.ok(account);
 }
 

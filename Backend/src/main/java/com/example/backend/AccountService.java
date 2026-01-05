@@ -2,7 +2,7 @@ package com.example.backend;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,19 +12,22 @@ public class AccountService {
 
     private final AccountRepository accountRepo;
     private final TransactionRepository transactionRepo;
+    private final BCryptPasswordEncoder passwordEncoder;
 
-    public AccountService(AccountRepository accountRepo, TransactionRepository transactionRepo) {
+    public AccountService(AccountRepository accountRepo, TransactionRepository transactionRepo, BCryptPasswordEncoder passwordEncoder) {
         this.accountRepo = accountRepo;
         this.transactionRepo = transactionRepo;
+        this.passwordEncoder = passwordEncoder;
+        
     }
 
 public Account createAccount(String ownerName, String password) {
     if (accountRepo.existsByOwnerName(ownerName)) {
-        return null; 
+        throw new RuntimeException("Owner name already exists"); 
     }
     Account account = new Account();
     account.setOwnerName(ownerName);
-    account.setPassword(password);
+    account.setPassword(passwordEncoder.encode(password));
     return accountRepo.save(account);
 }
 

@@ -1,13 +1,13 @@
 // src/components/CreateAccountPage.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api"; // make sure this points to your api.js
+import api from "../api/api";
 
 function CreateAccountPage({ onLogin }) {
   const [ownerName, setOwnerName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // allows navigation after creation
+  const navigate = useNavigate(); 
   
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -18,7 +18,7 @@ function CreateAccountPage({ onLogin }) {
     }
   
     try {
-      await api.post("/accounts", { ownerName, password }); // send password
+      await api.post("/accounts", { ownerName, password });
       navigate("/login");
     } catch (err) {
       console.error(err);
