@@ -61,28 +61,28 @@ public class AccountController {
     
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-    String ownerName = body.get("ownerName");
-    String password = body.get("password");
+        String ownerName = body.get("ownerName");
+        String password = body.get("password");
 
-    if (ownerName == null || password == null) {
-        return ResponseEntity.badRequest().body("Missing credentials");
-    }
+        if (ownerName == null || password == null) {
+            return ResponseEntity.badRequest().body("Missing credentials");
+        }
 
-    Account account = service.getAccountByOwner(ownerName);
+        Account account = service.getAccountByOwner(ownerName);
 
-    if (account == null) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account not found");
+        if (account == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account not found");
+        }
+        if (!passwordEncoder.matches(password, account.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password");
+        }
+        return ResponseEntity.ok(account);
     }
-    if (!passwordEncoder.matches(password, account.getPassword())) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password");
-    }
-    return ResponseEntity.ok(account);
-}
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAccount(
         @PathVariable Long id, 
-        @RequestParam Long adminId) { // Pass the ID of the person performing the delete
+        @RequestParam Long adminId) {
         
         Account performer = service.getAccount(adminId);
         

@@ -8,13 +8,11 @@ function Dashboard({ account, onLogout }) {
   const [allAccounts, setAllAccounts] = useState([]); 
   const [managerError, setManagerError] = useState("");
 
-  // Determine if manager based on possible JSON naming variations
   const isManager = currentAccount?.manager || currentAccount?.isManager;
 
   useEffect(() => {
     setCurrentAccount(account);
     
-    // Fetch all accounts only if the user is a manager
     if (account && (account.manager || account.isManager)) {
       fetchAllAccounts(account.id);
     }
@@ -22,10 +20,9 @@ function Dashboard({ account, onLogout }) {
 
   const fetchAllAccounts = async (adminId) => {
     try {
-      // Matches your @GetMapping that requires @RequestParam Long adminId
       const response = await api.get(`/accounts?adminId=${adminId}`); 
       setAllAccounts(response.data);
-      setManagerError(""); // Clear any previous errors
+      setManagerError("");
     } catch (err) {
       console.error("Failed to fetch accounts", err);
       setManagerError("Could not load account list. Access denied.");

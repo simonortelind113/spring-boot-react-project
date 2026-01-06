@@ -13,7 +13,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 
 @Entity
 public class Account {
@@ -42,33 +41,25 @@ public class Account {
 
     }
 
-    public void setBalance(BigDecimal balance){
-        this.balance = balance;
-    } 
-    public void setOwnerName(String ownerName){
-        this.ownerName = ownerName;
-    }
+    public boolean isManager() { return manager; }
 
-    public void setPassword(String password){
-        this.password = password;
-    }
+    //--SETTERS--
+
+    public void setBalance(BigDecimal balance){this.balance = balance;} 
+    
+    public void setOwnerName(String ownerName){this.ownerName = ownerName;}
+
+    public void setPassword(String password){this.password = password;}
+
     public void setManager(boolean manager) { this.manager = manager; }
 
-    public BigDecimal getBalance(){
-        return balance;
-    }
+    //--GETTERS--
 
-    public String getOwnerName(){
-        return ownerName;
-    }
+    public BigDecimal getBalance(){return balance;}
 
-    public String getPassword(){
-        return password;
-    }
+    public String getOwnerName(){return ownerName;}
 
-    public Long getId(){
-        return id;
-    }
-   
-    public boolean isManager() { return manager; }
+    public String getPassword(){return password;}
+
+    public Long getId(){return id;}
 }

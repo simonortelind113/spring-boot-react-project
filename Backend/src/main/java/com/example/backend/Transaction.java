@@ -18,7 +18,7 @@ public class Transaction {
     @ManyToOne
     private Account account;
 
-    private String type; // "DEPOSIT" or "WITHDRAW"
+    private String type;
     private BigDecimal amount;
     private LocalDateTime timestamp = LocalDateTime.now();
 
@@ -28,33 +28,19 @@ public class Transaction {
 
     //--GETTERS--
 
-    public Long getId(){
-        return id;
-    }
+    public Long getId(){return id;}
 
-    public BigDecimal getAmount(){
-        return amount;
-    }
+    public BigDecimal getAmount(){return amount;}
 
-    public String getType(){
-        return type;
-    }
-    public LocalDateTime getCreatedAt(){
-        return timestamp;
-    }
+    public String getType(){return type;}
+    
+    public LocalDateTime getCreatedAt(){return timestamp;}
 
     //--SETTERS--
 
-    public void setAmount(BigDecimal amount){
-        this.amount = amount;
-    }
+    public void setAmount(BigDecimal amount){this.amount = amount;}
 
-    public void setAccount(Account account) {
-        this.account = account;
-    }
+    public void setAccount(Account account) {this.account = account;}
 
-    public void setType(String type){
-        this.type = type;
-    }
-
+    public void setType(String type){this.type = type;}
 }

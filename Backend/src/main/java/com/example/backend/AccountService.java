@@ -21,29 +21,29 @@ public class AccountService {
         
     }
 
-public Account createAccount(String ownerName, String password) {
-    if (accountRepo.existsByOwnerName(ownerName)) {
-        throw new RuntimeException("Owner name already exists"); 
+    public Account createAccount(String ownerName, String password) {
+        if (accountRepo.existsByOwnerName(ownerName)) {
+            throw new RuntimeException("Owner name already exists"); 
+        }
+        Account account = new Account();
+        account.setOwnerName(ownerName);
+        account.setPassword(passwordEncoder.encode(password));
+        return accountRepo.save(account);
     }
-    Account account = new Account();
-    account.setOwnerName(ownerName);
-    account.setPassword(passwordEncoder.encode(password));
-    return accountRepo.save(account);
-}
 
-@Transactional
-public boolean deleteAccount(Long id) {
-    if (accountRepo.existsById(id)) {
-        transactionRepo.deleteByAccountId(id); 
-        accountRepo.deleteById(id);
-        return true;
+    @Transactional
+    public boolean deleteAccount(Long id) {
+        if (accountRepo.existsById(id)) {
+            transactionRepo.deleteByAccountId(id); 
+            accountRepo.deleteById(id);
+            return true;
+        }
+        return false;
     }
-    return false;
-}
 
-public Account getAccountByOwner(String ownerName) {
-    return accountRepo.findByOwnerName(ownerName);
-}
+    public Account getAccountByOwner(String ownerName) {
+        return accountRepo.findByOwnerName(ownerName);
+    }
 
 
     public Account deposit(Long accountId, BigDecimal amount) {

@@ -20,12 +20,12 @@ function Login({ onLogin }) {
     try {
       const response = await api.post("/accounts/login", { ownerName, password });
       const account = response.data;
-      onLogin(account); // sets account in App state
+      onLogin(account); 
       navigate("/dashboard");
     } catch (err) {
         console.log("--- DEBUG START ---");
-        console.log("Status Code:", err.response?.status); // e.g. 400, 404, 500
-        console.log("Server Message:", err.response?.data); // The message from your backend
+        console.log("Status Code:", err.response?.status); 
+        console.log("Server Message:", err.response?.data); 
         console.log("Full Error Object:", err);
         console.log("--- DEBUG END ---");
         setError("Login failed. Check the console for details.");
@@ -33,7 +33,7 @@ function Login({ onLogin }) {
   };
   
   const goToCreateAccount = () => {
-    navigate("/create-account"); // navigate to account creation page
+    navigate("/create-account"); 
   };
 
   return (
