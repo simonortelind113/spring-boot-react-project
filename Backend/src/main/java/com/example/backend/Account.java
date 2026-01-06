@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,6 +26,7 @@ public class Account {
     @Column(name = "ownerName", unique = true, nullable = false)
     private String ownerName;
     
+    @JsonIgnore
     @Column(name = "password", nullable = false)
     private String password;
 
@@ -34,14 +37,13 @@ public class Account {
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     private List<Transaction> transactions = new ArrayList<>();
 
-    @Column(name = "manager", nullable = false)
-    private boolean manager = false;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable=false)
+    private Role role = Role.CUSTOMER;
 
     public Account(){
 
     }
-
-    public boolean isManager() { return manager; }
 
     //--SETTERS--
 
@@ -51,7 +53,7 @@ public class Account {
 
     public void setPassword(String password){this.password = password;}
 
-    public void setManager(boolean manager) { this.manager = manager; }
+    public void setRole(Role role){this.role = role;}
 
     //--GETTERS--
 
@@ -62,4 +64,6 @@ public class Account {
     public String getPassword(){return password;}
 
     public Long getId(){return id;}
+
+    public Role getRole(){return role;}
 }

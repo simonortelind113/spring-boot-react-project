@@ -25,23 +25,75 @@ public class AccountController {
    
     @PostMapping
     public ResponseEntity<?> createAccount(@RequestBody Map<String, String> body) {
+
         String ownerName = body.get("ownerName");
         String password = body.get("password");
-    
+
+        if (ownerName == null || password == null) {
+            return ResponseEntity.badRequest().body("Missing fields");
+        }
+
         Account account = service.createAccount(ownerName, password);
-    
+
         if (account == null) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Owner name already exists");
         }
-    
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
+
+        String ownerName = body.get("ownerName");
+        String password = body.get("password");
+
+        if (ownerName == null || password == null) {
+            return ResponseEntity.badRequest().body("Missing credentials");
+        }
+
+        Account account = service.getAccountByOwner(ownerName);
+
+        if (account == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account not found");
+        }
+
+        if (!passwordEncoder.matches(password, account.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password");
+        }
+
         return ResponseEntity.ok(account);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteAccount(
+        @PathVariable Long id,
+        @RequestParam Long adminId) {
+
+        Account performer = service.getAccount(adminId);
+
+        if (performer.getRole() != Role.MANAGER) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Only managers can delete accounts.");
+        }
+
+        boolean deleted = service.deleteAccount(id);
+        return deleted ? ResponseEntity.ok().build()
+                    : ResponseEntity.notFound().build();
+    }
+
     @PostMapping("/{id}/deposit")
-    public Account deposit(@PathVariable Long id, @RequestParam BigDecimal amount) {
-        return service.deposit(id, amount);
+    public ResponseEntity<?> deposit(
+        @RequestParam Long performerId,
+        @PathVariable Long id,
+        @RequestParam BigDecimal amount) {
+
+        try {
+            return ResponseEntity.ok(service.deposit(performerId, id, amount));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
     }
 
     @PostMapping("/{id}/withdraw")
@@ -59,53 +111,16 @@ public class AccountController {
         return transactionRepository.findByAccountId(id);
     }
     
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        String ownerName = body.get("ownerName");
-        String password = body.get("password");
-
-        if (ownerName == null || password == null) {
-            return ResponseEntity.badRequest().body("Missing credentials");
-        }
-
-        Account account = service.getAccountByOwner(ownerName);
-
-        if (account == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account not found");
-        }
-        if (!passwordEncoder.matches(password, account.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password");
-        }
-        return ResponseEntity.ok(account);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAccount(
-        @PathVariable Long id, 
-        @RequestParam Long adminId) {
-        
-        Account performer = service.getAccount(adminId);
-        
-        if (performer == null || !performer.isManager()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only managers can delete accounts.");
-        }
-    
-        boolean deleted = service.deleteAccount(id);
-        return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
-    }
-
-
     @GetMapping
     public ResponseEntity<?> getAllAccounts(@RequestParam Long adminId) {
-        try {
-            Account requester = service.getAccount(adminId);
-            if (!requester.isManager()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied.");
-            }
-            return ResponseEntity.ok(service.getAllAccounts());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Admin account not found.");
+
+        Account requester = service.getAccount(adminId);
+
+        if (requester.getRole() != Role.MANAGER) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied.");
         }
+
+        return ResponseEntity.ok(service.getAllAccounts());
     }
 }
 
