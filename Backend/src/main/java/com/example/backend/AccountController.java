@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:3001")
 @RestController
 @RequestMapping("/api/accounts")
 public class AccountController {
@@ -83,19 +82,6 @@ public class AccountController {
                     : ResponseEntity.notFound().build();
     }
 
-    @PostMapping("/{id}/deposit")
-    public ResponseEntity<?> deposit(
-        @RequestParam Long performerId,
-        @PathVariable Long id,
-        @RequestParam BigDecimal amount) {
-
-        try {
-            return ResponseEntity.ok(service.deposit(performerId, id, amount));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        }
-    }
-
     @PostMapping("/{id}/withdraw")
     public Account withdraw(@PathVariable Long id, @RequestParam BigDecimal amount) {
         return service.withdraw(id, amount);
@@ -121,6 +107,41 @@ public class AccountController {
         }
 
         return ResponseEntity.ok(service.getAllAccounts());
+    }
+
+    //--DEPOSIT--
+
+    @PostMapping("/{id}/deposit-request")
+    public ResponseEntity<?> requestDeposit(
+            @PathVariable Long id,
+            @RequestParam Long performerId,
+            @RequestParam BigDecimal amount) {
+
+        service.createDepositRequest(performerId, id, amount);
+        return ResponseEntity.ok("Deposit request submitted");
+    }
+
+    @GetMapping("/deposit-requests")
+    public List<DepositRequest> getPendingDeposits(@RequestParam Long staffId) {
+        return service.getPendingDepositRequests(staffId);
+    }
+
+    @PostMapping("/deposit-requests/{id}/approve")
+    public ResponseEntity<?> approveDeposit(
+            @PathVariable Long id,
+            @RequestParam Long staffId) {
+
+        service.approveDeposit(id, staffId);
+        return ResponseEntity.ok("Deposit approved");
+    }
+
+    @PostMapping("/deposit-requests/{id}/reject")
+    public ResponseEntity<?> rejectDeposit(
+            @PathVariable Long id,
+            @RequestParam Long staffId) {
+
+        service.rejectDeposit(id, staffId);
+        return ResponseEntity.ok("Deposit rejected");
     }
 }
 

@@ -1,23 +1,23 @@
 import { useState, useEffect } from "react";
-import AccountDetails from "./AccountDetails";
-import TransactionHistory from "./TransactionHistory";
 import api from "../api/api";
 
-// Simple role badge component
+/* ---------- ROLE BADGE ---------- */
 function RoleBadge({ role }) {
   const color =
     role === "MANAGER" ? "#2980b9" :
     role === "ADVISOR" ? "#27ae60" :
     "#7f8c8d";
+
   return (
     <span
       style={{
-        color: "white",
         backgroundColor: color,
+        color: "white",
         padding: "4px 10px",
-        borderRadius: "5px",
+        borderRadius: "6px",
         fontWeight: "bold",
         marginLeft: "10px",
+        fontSize: "0.9rem",
       }}
     >
       {role}
@@ -25,13 +25,17 @@ function RoleBadge({ role }) {
   );
 }
 
+/* ---------- DASHBOARD ---------- */
 function Dashboard({ account, onLogout }) {
   const [currentAccount, setCurrentAccount] = useState(account);
   const [allAccounts, setAllAccounts] = useState([]);
+  const [depositAmount, setDepositAmount] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [pendingDeposits, setPendingDeposits] = useState([]);
 
-  const role = currentAccount?.role;
-  const isManager = role === "MANAGER";
+  const isManager = currentAccount?.role === "MANAGER";
+  const isStaff = currentAccount?.role === "MANAGER" || currentAccount?.role === "BANK_ADVISOR";
 
   useEffect(() => {
     setCurrentAccount(account);
@@ -39,26 +43,83 @@ function Dashboard({ account, onLogout }) {
     if (account?.role === "MANAGER") {
       fetchAllAccounts(account.id);
     }
+
+    if (isStaff) {
+      fetchPendingDeposits(account.id); 
+    }
   }, [account]);
 
+  /* ---------- API CALLS ---------- */
   const fetchAllAccounts = async (adminId) => {
     try {
       const res = await api.get(`/accounts?adminId=${adminId}`);
       setAllAccounts(res.data);
+    } catch {
+      setError("Failed to load accounts");
+    }
+  };
+
+  const fetchPendingDeposits = async (staffId) => {
+    try {
+      const res = await api.get(`/accounts/deposit-requests?staffId=${staffId}`);
+      setPendingDeposits(res.data);
+    } catch {
+      setError("Failed to load deposit requests");
+    }
+  };
+
+  const handleDeposit = async () => {
+    if (!depositAmount) return;
+
+    try {
+      await api.post(
+        `/accounts/${currentAccount.id}/deposit-request`,
+        null,
+        {
+          params: {
+            performerId: currentAccount.id,
+            amount: depositAmount,
+          },
+        }
+      );
+
+      setDepositAmount("");
       setError("");
+      setMessage("Deposit request submitted. Awaiting approval.");
     } catch (err) {
-      setError("Access denied or failed to load accounts");
+      setError(err.response?.data || "Deposit request failed");
+      setMessage("");
+    }
+  };
+
+  const handleApproveDeposit = async (requestId) => {
+    try {
+      await api.post(`/accounts/deposit-requests/${requestId}/approve`, null, {
+        params: { staffId: currentAccount.id },
+      });
+      setPendingDeposits(pendingDeposits.filter(r => r.id !== requestId));
+      setMessage("Deposit approved");
+    } catch (err) {
+      setError(err.response?.data || "Approval failed");
+      setMessage("");
+    }
+  };
+
+  const handleRejectDeposit = async (requestId) => {
+    try {
+      await api.post(`/accounts/deposit-requests/${requestId}/reject`, null, {
+        params: { staffId: currentAccount.id },
+      });
+      setPendingDeposits(pendingDeposits.filter(r => r.id !== requestId));
+      setMessage("Deposit rejected");
+    } catch (err) {
+      setError(err.response?.data || "Rejection failed");
+      setMessage("");
     }
   };
 
   const handleDeleteAccount = async (targetId) => {
-    const confirmDelete = window.confirm(
-      targetId === currentAccount.id
-        ? "Delete your own account? You will be logged out."
-        : "Delete this account?"
-    );
-
-    if (!confirmDelete) return;
+    if (!window.confirm("Delete this account?")) return;
 
     try {
       await api.delete(`/accounts/${targetId}?adminId=${currentAccount.id}`);
@@ -66,20 +127,25 @@ function Dashboard({ account, onLogout }) {
 
       if (targetId === currentAccount.id) onLogout();
     } catch (err) {
-      setError(err.response?.data || "Delete failed");
+      const msg =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.error || "Delete failed";
+      setError(msg);
+      setMessage("");
     }
   };
 
   if (!currentAccount) return null;
 
-  // --- STYLE OBJECTS ---
+  /* ---------- STYLES ---------- */
   const container = {
     maxWidth: "900px",
     margin: "20px auto",
     padding: "20px",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f4f6f8",
     borderRadius: "10px",
-    fontFamily: "sans-serif",
+    fontFamily: "Arial, sans-serif",
   };
 
   const header = {
@@ -88,85 +154,100 @@ function Dashboard({ account, onLogout }) {
     alignItems: "center",
   };
 
-  const logoutBtn = {
-    backgroundColor: "#e74c3c",
-    color: "white",
-    border: "none",
-    padding: "10px 20px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontWeight: "bold",
-  };
-
-  const managerPanel = {
-    padding: "20px",
-    border: "2px solid #3498db",
-    borderRadius: "10px",
-    marginBottom: "30px",
-    backgroundColor: "#ebf5fb",
-  };
-
-  const errorStyle = {
-    color: "#c0392b",
-    fontWeight: "bold",
-    marginBottom: "10px",
-  };
-
-  const table = {
-    width: "100%",
-    borderCollapse: "collapse",
+  const card = {
     backgroundColor: "white",
+    padding: "20px",
+    borderRadius: "8px",
+    marginBottom: "20px",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
   };
 
-  const deleteBtn = {
-    backgroundColor: "#ff4757",
-    color: "white",
+  const button = {
+    padding: "10px 18px",
+    borderRadius: "6px",
     border: "none",
-    padding: "6px 12px",
-    borderRadius: "4px",
+    fontWeight: "bold",
     cursor: "pointer",
   };
 
   return (
     <div style={container}>
-      {/* HEADER */}
+      {/* ---------- HEADER ---------- */}
       <div style={header}>
         <h1>
-          Welcome, {currentAccount.ownerName} <RoleBadge role={role} />
+          Welcome, {currentAccount.ownerName}
+          <RoleBadge role={currentAccount.role} />
         </h1>
-        <button onClick={onLogout} style={logoutBtn}>
+        <button
+          onClick={onLogout}
+          style={{ ...button, backgroundColor: "#e74c3c", color: "white" }}
+        >
           Logout
         </button>
       </div>
 
-      <hr style={{ margin: "20px 0" }} />
+      {/* ---------- ERROR & MESSAGE ---------- */}
+      {error && <p style={{ color: "red", fontWeight: "bold" }}>{error}</p>}
+      {message && <p style={{ color: "green", fontWeight: "bold" }}>{message}</p>}
 
-      {/* MANAGER PANEL */}
-      {isManager && (
-        <div style={managerPanel}>
-          <h2>Manager Control Panel</h2>
-          {error && <p style={errorStyle}>{error}</p>}
+      {/* ---------- ACCOUNT SUMMARY ---------- */}
+      <div style={card}>
+        <h2>Account Summary</h2>
+        <p><strong>Account ID:</strong> {currentAccount.id}</p>
+        <p><strong>Balance:</strong> €{currentAccount.balance}</p>
+      </div>
 
-          <table style={table}>
+      {/* ---------- DEPOSIT ---------- */}
+      {currentAccount.role === "CUSTOMER" && (
+        <div style={card}>
+          <h2>Deposit</h2>
+          <input
+            type="number"
+            value={depositAmount}
+            placeholder="Enter amount"
+            onChange={(e) => setDepositAmount(e.target.value)}
+            style={{ padding: "10px", marginRight: "10px", width: "200px" }}
+          />
+          <button
+            onClick={handleDeposit}
+            style={{ ...button, backgroundColor: "#2ecc71", color: "white" }}
+          >
+            Request Deposit
+          </button>
+        </div>
+      )}
+
+      {/* ---------- PENDING DEPOSITS (Staff only) ---------- */}
+      {isStaff && pendingDeposits.length > 0 && (
+        <div style={card}>
+          <h2>Pending Deposit Requests</h2>
+          <table width="100%">
             <thead>
-              <tr style={{ textAlign: "left", backgroundColor: "#3498db", color: "white" }}>
-                <th style={{ padding: "10px" }}>ID</th>
-                <th style={{ padding: "10px" }}>Owner</th>
-                <th style={{ padding: "10px" }}>Role</th>
-                <th style={{ padding: "10px" }}>Action</th>
+              <tr>
+                <th>Request ID</th>
+                <th>Customer ID</th>
+                <th>Amount</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {allAccounts.map((acc) => (
-                <tr key={acc.id} style={{ borderBottom: "1px solid #ddd" }}>
-                  <td style={{ padding: "10px" }}>{acc.id}</td>
-                  <td style={{ padding: "10px" }}>
-                    {acc.ownerName} {acc.id === currentAccount.id && "(You)"}
-                  </td>
-                  <td style={{ padding: "10px" }}>{acc.role}</td>
-                  <td style={{ padding: "10px" }}>
-                    <button onClick={() => handleDeleteAccount(acc.id)} style={deleteBtn}>
-                      Delete
+              {pendingDeposits.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.id}</td>
+                  <td>{r.requestedBy}</td>
+                  <td>€{r.amount}</td>
+                  <td>
+                    <button
+                      onClick={() => handleApproveDeposit(r.id)}
+                      style={{ ...button, backgroundColor: "#2ecc71", color: "white", marginRight: "5px" }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleRejectDeposit(r.id)}
+                      style={{ ...button, backgroundColor: "#e74c3c", color: "white" }}
+                    >
+                      Reject
                     </button>
                   </td>
                 </tr>
@@ -176,11 +257,39 @@ function Dashboard({ account, onLogout }) {
         </div>
       )}
 
-      {/* ACCOUNT DETAILS */}
-      <AccountDetails account={currentAccount} setAccount={setCurrentAccount} />
-
-      {/* TRANSACTIONS */}
-      <TransactionHistory account={currentAccount} />
+      {/* ---------- MANAGER PANEL ---------- */}
+      {isManager && (
+        <div style={card}>
+          <h2>Manager Control Panel</h2>
+          <table width="100%">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Owner</th>
+                <th>Role</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allAccounts.map((acc) => (
+                <tr key={acc.id}>
+                  <td>{acc.id}</td>
+                  <td>{acc.ownerName}</td>
+                  <td>{acc.role}</td>
+                  <td>
+                    <button
+                      onClick={() => handleDeleteAccount(acc.id)}
+                      style={{ ...button, backgroundColor: "#ff4757", color: "white" }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

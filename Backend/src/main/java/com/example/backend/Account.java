@@ -41,10 +41,6 @@ public class Account {
     @Column(nullable=false)
     private Role role = Role.CUSTOMER;
 
-    public Account(){
-
-    }
-
     //--SETTERS--
 
     public void setBalance(BigDecimal balance){this.balance = balance;} 

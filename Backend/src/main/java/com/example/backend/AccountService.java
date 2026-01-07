@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -12,11 +13,14 @@ public class AccountService {
 
     private final AccountRepository accountRepo;
     private final TransactionRepository transactionRepo;
+    private final DepositRequestRepository depositReqRepo;
     private final BCryptPasswordEncoder passwordEncoder;
 
     public AccountService(AccountRepository accountRepo,
-                          TransactionRepository transactionRepo,
+                          TransactionRepository transactionRepo, 
+                          DepositRequestRepository depositReqRepo,
                           BCryptPasswordEncoder passwordEncoder) {
+        this.depositReqRepo = depositReqRepo;
         this.accountRepo = accountRepo;
         this.transactionRepo = transactionRepo;
         this.passwordEncoder = passwordEncoder;
@@ -56,25 +60,82 @@ public class AccountService {
         return accountRepo.findAll();
     }
 
-    public Account deposit(Long performerId, Long targetAccountId, BigDecimal amount) {
-        Account performer = getAccount(performerId);
-        Account target = getAccount(targetAccountId);
-        if (performer.getRole() == Role.CUSTOMER) {
-            throw new RuntimeException("Customers cannot deposit money");
+    //--DEPOSITS--
+
+    public DepositRequest createDepositRequest(
+        Long customerId,
+        Long targetAccountId,
+        BigDecimal amount) {
+
+        Account customer = getAccount(customerId);
+
+        if (customer.getRole() != Role.CUSTOMER) {
+            throw new RuntimeException("Only customers can request deposits");
         }
 
-        if (performer.getRole() == Role.BANK_ADVISOR
-                && amount.compareTo(new BigDecimal("10000")) > 0) {
-            throw new RuntimeException("Manager approval required for deposits over 10,000");
+        DepositRequest request = new DepositRequest();
+        request.setTargetAccountId(targetAccountId);
+        request.setAmount(amount);
+        request.setRequestedBy(customerId);
+        request.setStatus(RequestStatus.PENDING);
+        request.setCreatedAt(LocalDateTime.now());
+
+        return depositReqRepo.save(request);
+    }
+
+    public List<DepositRequest> getPendingDepositRequests(Long staffId) {
+        Account staff = getAccount(staffId);
+
+        if (staff.getRole() == Role.CUSTOMER) {
+            throw new RuntimeException("Access denied");
         }
-        target.setBalance(target.getBalance().add(amount));
+
+        return depositReqRepo.findByStatus(RequestStatus.PENDING);
+    }
+
+    @Transactional
+    public void approveDeposit(Long requestId, Long staffId) {
+        Account staff = getAccount(staffId);
+        DepositRequest request = depositReqRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        if (request.getStatus() != RequestStatus.PENDING) {
+            throw new RuntimeException("Already handled");
+        }
+
+        if (staff.getRole() == Role.BANK_ADVISOR &&
+            request.getAmount().compareTo(new BigDecimal("10000")) > 0) {
+            throw new RuntimeException("Manager approval required");
+        }
+
+        Account target = getAccount(request.getTargetAccountId());
+        target.setBalance(target.getBalance().add(request.getAmount()));
+
         Transaction tx = new Transaction();
         tx.setAccount(target);
         tx.setType("DEPOSIT");
-        tx.setAmount(amount);
+        tx.setAmount(request.getAmount());
+
         transactionRepo.save(tx);
-        return accountRepo.save(target);
+        accountRepo.save(target);
+
+        request.setStatus(RequestStatus.APPROVED);
+        request.setHandledBy(staffId);
+        depositReqRepo.save(request);
     }
+
+    public void rejectDeposit(Long requestId, Long staffId) {
+        getAccount(staffId); 
+
+        DepositRequest request = depositReqRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        request.setStatus(RequestStatus.REJECTED);
+        request.setHandledBy(staffId);
+        depositReqRepo.save(request);
+    }
+
+    //--WITHDRAW--
 
     public Account withdraw(Long accountId, BigDecimal amount) {
         Account account = getAccount(accountId);

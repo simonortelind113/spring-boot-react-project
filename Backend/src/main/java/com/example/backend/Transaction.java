@@ -22,10 +22,6 @@ public class Transaction {
     private BigDecimal amount;
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public Transaction(){
-
-    }
-
     //--GETTERS--
 
     public Long getId(){return id;}
