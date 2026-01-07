@@ -66,30 +66,24 @@ public class AccountService {
         Long customerId,
         Long targetAccountId,
         BigDecimal amount) {
-
         Account customer = getAccount(customerId);
-
         if (customer.getRole() != Role.CUSTOMER) {
             throw new RuntimeException("Only customers can request deposits");
         }
-
         DepositRequest request = new DepositRequest();
         request.setTargetAccountId(targetAccountId);
         request.setAmount(amount);
         request.setRequestedBy(customerId);
         request.setStatus(RequestStatus.PENDING);
         request.setCreatedAt(LocalDateTime.now());
-
         return depositReqRepo.save(request);
     }
 
     public List<DepositRequest> getPendingDepositRequests(Long staffId) {
         Account staff = getAccount(staffId);
-
         if (staff.getRole() == Role.CUSTOMER) {
             throw new RuntimeException("Access denied");
         }
-
         return depositReqRepo.findByStatus(RequestStatus.PENDING);
     }
 
@@ -98,27 +92,21 @@ public class AccountService {
         Account staff = getAccount(staffId);
         DepositRequest request = depositReqRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
-
         if (request.getStatus() != RequestStatus.PENDING) {
             throw new RuntimeException("Already handled");
         }
-
         if (staff.getRole() == Role.BANK_ADVISOR &&
             request.getAmount().compareTo(new BigDecimal("10000")) > 0) {
             throw new RuntimeException("Manager approval required");
         }
-
         Account target = getAccount(request.getTargetAccountId());
         target.setBalance(target.getBalance().add(request.getAmount()));
-
         Transaction tx = new Transaction();
         tx.setAccount(target);
         tx.setType("DEPOSIT");
         tx.setAmount(request.getAmount());
-
         transactionRepo.save(tx);
         accountRepo.save(target);
-
         request.setStatus(RequestStatus.APPROVED);
         request.setHandledBy(staffId);
         depositReqRepo.save(request);
@@ -126,10 +114,8 @@ public class AccountService {
 
     public void rejectDeposit(Long requestId, Long staffId) {
         getAccount(staffId); 
-
         DepositRequest request = depositReqRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
-
         request.setStatus(RequestStatus.REJECTED);
         request.setHandledBy(staffId);
         depositReqRepo.save(request);

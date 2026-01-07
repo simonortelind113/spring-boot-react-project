@@ -24,44 +24,33 @@ public class AccountController {
    
     @PostMapping
     public ResponseEntity<?> createAccount(@RequestBody Map<String, String> body) {
-
         String ownerName = body.get("ownerName");
         String password = body.get("password");
-
         if (ownerName == null || password == null) {
             return ResponseEntity.badRequest().body("Missing fields");
         }
-
         Account account = service.createAccount(ownerName, password);
-
         if (account == null) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Owner name already exists");
         }
-
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-
         String ownerName = body.get("ownerName");
         String password = body.get("password");
-
         if (ownerName == null || password == null) {
             return ResponseEntity.badRequest().body("Missing credentials");
         }
-
         Account account = service.getAccountByOwner(ownerName);
-
         if (account == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account not found");
         }
-
         if (!passwordEncoder.matches(password, account.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password");
         }
-
         return ResponseEntity.ok(account);
     }
 
@@ -69,14 +58,11 @@ public class AccountController {
     public ResponseEntity<?> deleteAccount(
         @PathVariable Long id,
         @RequestParam Long adminId) {
-
         Account performer = service.getAccount(adminId);
-
         if (performer.getRole() != Role.MANAGER) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Only managers can delete accounts.");
         }
-
         boolean deleted = service.deleteAccount(id);
         return deleted ? ResponseEntity.ok().build()
                     : ResponseEntity.notFound().build();
@@ -99,13 +85,10 @@ public class AccountController {
     
     @GetMapping
     public ResponseEntity<?> getAllAccounts(@RequestParam Long adminId) {
-
         Account requester = service.getAccount(adminId);
-
         if (requester.getRole() != Role.MANAGER) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied.");
         }
-
         return ResponseEntity.ok(service.getAllAccounts());
     }
 
@@ -116,7 +99,6 @@ public class AccountController {
             @PathVariable Long id,
             @RequestParam Long performerId,
             @RequestParam BigDecimal amount) {
-
         service.createDepositRequest(performerId, id, amount);
         return ResponseEntity.ok("Deposit request submitted");
     }
@@ -130,7 +112,6 @@ public class AccountController {
     public ResponseEntity<?> approveDeposit(
             @PathVariable Long id,
             @RequestParam Long staffId) {
-
         service.approveDeposit(id, staffId);
         return ResponseEntity.ok("Deposit approved");
     }
@@ -139,7 +120,6 @@ public class AccountController {
     public ResponseEntity<?> rejectDeposit(
             @PathVariable Long id,
             @RequestParam Long staffId) {
-
         service.rejectDeposit(id, staffId);
         return ResponseEntity.ok("Deposit rejected");
     }
