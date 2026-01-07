@@ -69,7 +69,9 @@ public class AccountController {
     }
 
     @PostMapping("/{id}/withdraw")
-    public Account withdraw(@PathVariable Long id, @RequestParam BigDecimal amount) {
+    public Account withdraw(
+            @PathVariable Long id,
+            @RequestParam BigDecimal amount) {
         return service.withdraw(id, amount);
     }
 
@@ -93,7 +95,7 @@ public class AccountController {
     }
 
     //--DEPOSIT--
-
+    
     @PostMapping("/{id}/deposit-request")
     public ResponseEntity<?> requestDeposit(
             @PathVariable Long id,
@@ -104,23 +106,23 @@ public class AccountController {
     }
 
     @GetMapping("/deposit-requests")
-    public List<DepositRequest> getPendingDeposits(@RequestParam Long staffId) {
+    public List<Transaction> getPendingDeposits(@RequestParam Long staffId) {
         return service.getPendingDepositRequests(staffId);
     }
 
-    @PostMapping("/deposit-requests/{id}/approve")
+    @PostMapping("/deposit-requests/{transactionId}/approve")
     public ResponseEntity<?> approveDeposit(
-            @PathVariable Long id,
+            @PathVariable Long transactionId,
             @RequestParam Long staffId) {
-        service.approveDeposit(id, staffId);
+        service.approveDeposit(transactionId, staffId);
         return ResponseEntity.ok("Deposit approved");
     }
 
-    @PostMapping("/deposit-requests/{id}/reject")
+    @PostMapping("/deposit-requests/{transactionId}/reject")
     public ResponseEntity<?> rejectDeposit(
-            @PathVariable Long id,
+            @PathVariable Long transactionId,
             @RequestParam Long staffId) {
-        service.rejectDeposit(id, staffId);
+        service.rejectDeposit(transactionId, staffId);
         return ResponseEntity.ok("Deposit rejected");
     }
 }

@@ -5,7 +5,7 @@ import api from "../api/api";
 function RoleBadge({ role }) {
   const color =
     role === "MANAGER" ? "#2980b9" :
-    role === "ADVISOR" ? "#27ae60" :
+    role === "BANK_ADVISOR" ? "#27ae60" :
     "#7f8c8d";
 
   return (
@@ -32,7 +32,7 @@ function Dashboard({ account, onLogout }) {
   const [depositAmount, setDepositAmount] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [pendingDeposits, setPendingDeposits] = useState([]);
+  const [pendingTransactions, setPendingTransactions] = useState([]);
 
   const isManager = currentAccount?.role === "MANAGER";
   const isStaff = currentAccount?.role === "MANAGER" || currentAccount?.role === "BANK_ADVISOR";
@@ -45,7 +45,7 @@ function Dashboard({ account, onLogout }) {
     }
 
     if (isStaff) {
-      fetchPendingDeposits(account.id); 
+      fetchPendingTransactions(account.id); 
     }
   }, [account]);
 
@@ -59,17 +59,20 @@ function Dashboard({ account, onLogout }) {
     }
   };
 
-  const fetchPendingDeposits = async (staffId) => {
+  const fetchPendingTransactions = async (staffId) => {
     try {
       const res = await api.get(`/accounts/deposit-requests?staffId=${staffId}`);
-      setPendingDeposits(res.data);
+      setPendingTransactions(
+        res.data.filter(t => t.status === "PENDING")
+      );
     } catch {
-      setError("Failed to load deposit requests");
+      setError("Failed to load pending transactions");
     }
   };
 
+  /* ---------- CUSTOMER ACTIONS ---------- */
   const handleDeposit = async () => {
-    if (!depositAmount) return;
+    if (!depositAmount || Number(depositAmount) <= 0) return;
 
     try {
       await api.post(
@@ -92,32 +95,59 @@ function Dashboard({ account, onLogout }) {
     }
   };
 
-  const handleApproveDeposit = async (requestId) => {
+  const handleWithdraw = async () => {
+    if (!depositAmount || Number(depositAmount) <= 0) return;
+
+    try {
+      await api.post(
+        `/accounts/${currentAccount.id}/withdraw`,
+        null,
+        { params: { amount: depositAmount } }
+      );
+
+      // Update balance immediately for UX
+      setCurrentAccount({
+        ...currentAccount,
+        balance: currentAccount.balance - Number(depositAmount),
+      });
+
+      setDepositAmount("");
+      setError("");
+      setMessage("Withdrawal successful");
+    } catch (err) {
+      setError(err.response?.data || "Withdrawal failed");
+      setMessage("");
+    }
+  };
+
+  /* ---------- STAFF ACTIONS ---------- */
+  const handleApproveTransaction = async (requestId) => {
     try {
       await api.post(`/accounts/deposit-requests/${requestId}/approve`, null, {
         params: { staffId: currentAccount.id },
       });
-      setPendingDeposits(pendingDeposits.filter(r => r.id !== requestId));
-      setMessage("Deposit approved");
+      setPendingTransactions(pendingTransactions.filter(r => r.id !== requestId));
+      setMessage("Transaction approved");
     } catch (err) {
       setError(err.response?.data || "Approval failed");
       setMessage("");
     }
   };
 
-  const handleRejectDeposit = async (requestId) => {
+  const handleRejectTransaction = async (requestId) => {
     try {
       await api.post(`/accounts/deposit-requests/${requestId}/reject`, null, {
         params: { staffId: currentAccount.id },
       });
-      setPendingDeposits(pendingDeposits.filter(r => r.id !== requestId));
-      setMessage("Deposit rejected");
+      setPendingTransactions(pendingTransactions.filter(r => r.id !== requestId));
+      setMessage("Transaction rejected");
     } catch (err) {
       setError(err.response?.data || "Rejection failed");
       setMessage("");
     }
   };
 
+  /* ---------- MANAGER ACTIONS ---------- */
   const handleDeleteAccount = async (targetId) => {
     if (!window.confirm("Delete this account?")) return;
 
@@ -197,10 +227,11 @@ function Dashboard({ account, onLogout }) {
         <p><strong>Balance:</strong> €{currentAccount.balance}</p>
       </div>
 
-      {/* ---------- DEPOSIT ---------- */}
+      {/* ---------- DEPOSIT / WITHDRAW ---------- */}
       {currentAccount.role === "CUSTOMER" && (
         <div style={card}>
-          <h2>Deposit</h2>
+          <h2>Deposit / Withdraw</h2>
+
           <input
             type="number"
             value={depositAmount}
@@ -208,44 +239,83 @@ function Dashboard({ account, onLogout }) {
             onChange={(e) => setDepositAmount(e.target.value)}
             style={{ padding: "10px", marginRight: "10px", width: "200px" }}
           />
+
           <button
             onClick={handleDeposit}
-            style={{ ...button, backgroundColor: "#2ecc71", color: "white" }}
+            style={{
+              ...button,
+              backgroundColor: "#2ecc71",
+              color: "white",
+              marginRight: "8px",
+            }}
           >
-            Request Deposit
+            Deposit
+          </button>
+
+          <button
+            onClick={handleWithdraw}
+            style={{
+              ...button,
+              backgroundColor: "#e67e22",
+              color: "white",
+            }}
+          >
+            Withdraw
           </button>
         </div>
       )}
 
-      {/* ---------- PENDING DEPOSITS (Staff only) ---------- */}
-      {isStaff && pendingDeposits.length > 0 && (
+      {/* ---------- PENDING TRANSACTIONS (Staff only) ---------- */}
+      {isStaff && pendingTransactions.length > 0 && (
         <div style={card}>
-          <h2>Pending Deposit Requests</h2>
+          <h2>Pending Transactions</h2>
+
           <table width="100%">
             <thead>
               <tr>
-                <th>Request ID</th>
+                <th>ID</th>
+                <th>Type</th>
                 <th>Customer ID</th>
                 <th>Amount</th>
                 <th>Action</th>
               </tr>
             </thead>
+
             <tbody>
-              {pendingDeposits.map((r) => (
+              {pendingTransactions.map((r) => (
                 <tr key={r.id}>
                   <td>{r.id}</td>
+                  <td>
+                    <strong
+                      style={{
+                        color: r.type === "DEPOSIT" ? "#27ae60" : "#e67e22",
+                      }}
+                    >
+                      {r.type}
+                    </strong>
+                  </td>
                   <td>{r.requestedBy}</td>
                   <td>€{r.amount}</td>
                   <td>
                     <button
-                      onClick={() => handleApproveDeposit(r.id)}
-                      style={{ ...button, backgroundColor: "#2ecc71", color: "white", marginRight: "5px" }}
+                      onClick={() => handleApproveTransaction(r.id)}
+                      style={{
+                        ...button,
+                        backgroundColor: "#2ecc71",
+                        color: "white",
+                        marginRight: "5px",
+                      }}
                     >
                       Approve
                     </button>
+
                     <button
-                      onClick={() => handleRejectDeposit(r.id)}
-                      style={{ ...button, backgroundColor: "#e74c3c", color: "white" }}
+                      onClick={() => handleRejectTransaction(r.id)}
+                      style={{
+                        ...button,
+                        backgroundColor: "#e74c3c",
+                        color: "white",
+                      }}
                     >
                       Reject
                     </button>
