@@ -13,14 +13,11 @@ public class AccountService {
 
     private final AccountRepository accountRepo;
     private final TransactionRepository transactionRepo;
-    private final DepositRequestRepository depositReqRepo;
     private final BCryptPasswordEncoder passwordEncoder;
 
     public AccountService(AccountRepository accountRepo,
-                          TransactionRepository transactionRepo, 
-                          DepositRequestRepository depositReqRepo,
+                          TransactionRepository transactionRepo,
                           BCryptPasswordEncoder passwordEncoder) {
-        this.depositReqRepo = depositReqRepo;
         this.accountRepo = accountRepo;
         this.transactionRepo = transactionRepo;
         this.passwordEncoder = passwordEncoder;
