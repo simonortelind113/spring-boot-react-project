@@ -6,7 +6,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -14,50 +14,33 @@ public class AccountController {
 
     private final AccountService service;
     private final TransactionRepository transactionRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
 
     public AccountController(AccountService service, TransactionRepository transactionRepository, BCryptPasswordEncoder passwordEncoder) {
         this.service = service;
         this.transactionRepository = transactionRepository;
-        this.passwordEncoder = passwordEncoder;
     }
    
     @PostMapping
-    public ResponseEntity<?> createAccount(@RequestBody Map<String, String> body) {
-        String ownerName = body.get("ownerName");
-        String password = body.get("password");
-        if (ownerName == null || password == null) {
-            return ResponseEntity.badRequest().body("Missing fields");
-        }
-        Account account = service.createAccount(ownerName, password);
+    public ResponseEntity<?> createAccount(@Valid @RequestBody CreateAccountRequest request) {
+        Account account = service.createAccount(request.getOwnerName(),request.getPassword());
         if (account == null) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Owner name already exists");
         }
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
-
+    
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        String ownerName = body.get("ownerName");
-        String password = body.get("password");
-        if (ownerName == null || password == null) {
-            return ResponseEntity.badRequest().body("Missing credentials");
-        }
-        Account account = service.getAccountByOwner(ownerName);
-        if (account == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account not found");
-        }
-        if (!passwordEncoder.matches(password, account.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password");
-        }
-        return ResponseEntity.ok(account);
+    public ResponseEntity<AccountResponse> login(@Valid @RequestBody LoginRequest request) {
+        Account account = service.authenticate(
+                request.getOwnerName(),
+                request.getPassword()
+        );
+        return ResponseEntity.ok(new AccountResponse(account));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAccount(
-        @PathVariable Long id,
-        @RequestParam Long adminId) {
+    public ResponseEntity<?> deleteAccount(@PathVariable Long id, @RequestParam Long adminId) {
         Account performer = service.getAccount(adminId);
         if (performer.getRole() != Role.MANAGER) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -69,15 +52,14 @@ public class AccountController {
     }
 
     @PostMapping("/{id}/withdraw")
-    public Account withdraw(
-            @PathVariable Long id,
-            @RequestParam BigDecimal amount) {
-        return service.withdraw(id, amount);
+    public ResponseEntity<AccountResponse> withdraw(@PathVariable Long id, @RequestParam BigDecimal amount) {
+        Account account = service.withdraw(id, amount);
+        return ResponseEntity.ok(new AccountResponse(account));    
     }
 
     @GetMapping("/{id}")
-    public Account getAccount(@PathVariable Long id) {
-        return service.getAccount(id);
+    public ResponseEntity<AccountResponse> getAccount(@PathVariable Long id) {
+        return ResponseEntity.ok(new AccountResponse(service.getAccount(id))); 
     }
 
     @GetMapping("/{id}/transactions")
@@ -86,13 +68,15 @@ public class AccountController {
     }
     
     @GetMapping
-    public ResponseEntity<?> getAllAccounts(@RequestParam Long adminId) {
+    public ResponseEntity<List<AccountResponse>> getAllAccounts(@RequestParam Long adminId) {
         Account requester = service.getAccount(adminId);
         if (requester.getRole() != Role.MANAGER) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(service.getAllAccounts());
+        List<AccountResponse> response = service.getAllAccounts().stream().map(AccountResponse::new).toList();
+        return ResponseEntity.ok(response);
     }
+    
 
     //--DEPOSIT--
     

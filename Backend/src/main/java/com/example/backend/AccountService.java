@@ -115,10 +115,7 @@ public class AccountService {
         tx.setHandledBy(staffId);
         transactionRepo.save(tx);
     }
-    
-
-    //--WITHDRAW--
-    
+        
     @Transactional
     public Account withdraw(Long accountId, BigDecimal amount) {
         Account account = getAccount(accountId);
@@ -135,7 +132,19 @@ public class AccountService {
         transactionRepo.save(tx);
         return accountRepo.save(account);
     }
-    
+
+    //--AUTHENTICATE--
+
+    public Account authenticate(String ownerName, String rawPassword) {
+        Account account = accountRepo.findByOwnerName(ownerName);
+        if (account == null) {
+            throw new RuntimeException("Invalid credentials");
+        }
+        if (!passwordEncoder.matches(rawPassword, account.getPassword())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+        return account;
+    } 
 }
 
 
