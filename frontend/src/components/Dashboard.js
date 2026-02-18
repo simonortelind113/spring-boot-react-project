@@ -34,8 +34,15 @@ function Dashboard({ account, onLogout }) {
   const [message, setMessage] = useState("");
   const [pendingTransactions, setPendingTransactions] = useState([]);
 
+  /* ---------- TRANSACTION MODAL ---------- */
+  const [showTransactions, setShowTransactions] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [searchOwnerName, setSearchOwnerName] = useState("");
+
   const isManager = currentAccount?.role === "MANAGER";
-  const isStaff = currentAccount?.role === "MANAGER" || currentAccount?.role === "BANK_ADVISOR";
+  const isStaff =
+    currentAccount?.role === "MANAGER" ||
+    currentAccount?.role === "BANK_ADVISOR";
 
   useEffect(() => {
     setCurrentAccount(account);
@@ -45,7 +52,7 @@ function Dashboard({ account, onLogout }) {
     }
 
     if (isStaff) {
-      fetchPendingTransactions(account.id); 
+      fetchPendingTransactions(account.id);
     }
   }, [account]);
 
@@ -62,11 +69,24 @@ function Dashboard({ account, onLogout }) {
   const fetchPendingTransactions = async (staffId) => {
     try {
       const res = await api.get(`/accounts/deposit-requests?staffId=${staffId}`);
-      setPendingTransactions(
-        res.data.filter(t => t.status === "PENDING")
-      );
+      setPendingTransactions(res.data.filter((t) => t.status === "PENDING"));
     } catch {
       setError("Failed to load pending transactions");
+    }
+  };
+
+  /* ---------- FETCH TRANSACTIONS BY OWNER NAME (Manager only) ---------- */
+  const fetchTransactionsByOwner = async () => {
+    if (!searchOwnerName) return;
+    try {
+      const res = await api.get(
+        `/accounts/transactions-by-owner?ownerName=${searchOwnerName}&managerId=${currentAccount.id}`
+      );
+      setTransactions(res.data);
+      setShowTransactions(true);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load transactions");
     }
   };
 
@@ -105,7 +125,6 @@ function Dashboard({ account, onLogout }) {
         { params: { amount: depositAmount } }
       );
 
-      // Update balance immediately for UX
       setCurrentAccount({
         ...currentAccount,
         balance: currentAccount.balance - Number(depositAmount),
@@ -126,7 +145,7 @@ function Dashboard({ account, onLogout }) {
       await api.post(`/accounts/deposit-requests/${requestId}/approve`, null, {
         params: { staffId: currentAccount.id },
       });
-      setPendingTransactions(pendingTransactions.filter(r => r.id !== requestId));
+      setPendingTransactions(pendingTransactions.filter((r) => r.id !== requestId));
       setMessage("Transaction approved");
     } catch (err) {
       setError(err.response?.data || "Approval failed");
@@ -139,7 +158,7 @@ function Dashboard({ account, onLogout }) {
       await api.post(`/accounts/deposit-requests/${requestId}/reject`, null, {
         params: { staffId: currentAccount.id },
       });
-      setPendingTransactions(pendingTransactions.filter(r => r.id !== requestId));
+      setPendingTransactions(pendingTransactions.filter((r) => r.id !== requestId));
       setMessage("Transaction rejected");
     } catch (err) {
       setError(err.response?.data || "Rejection failed");
@@ -157,11 +176,7 @@ function Dashboard({ account, onLogout }) {
 
       if (targetId === currentAccount.id) onLogout();
     } catch (err) {
-      const msg =
-        typeof err.response?.data === "string"
-          ? err.response.data
-          : err.response?.data?.error || "Delete failed";
-      setError(msg);
+      setError("Delete failed");
       setMessage("");
     }
   };
@@ -176,12 +191,6 @@ function Dashboard({ account, onLogout }) {
     backgroundColor: "#f4f6f8",
     borderRadius: "10px",
     fontFamily: "Arial, sans-serif",
-  };
-
-  const header = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
   };
 
   const card = {
@@ -203,7 +212,7 @@ function Dashboard({ account, onLogout }) {
   return (
     <div style={container}>
       {/* ---------- HEADER ---------- */}
-      <div style={header}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1>
           Welcome, {currentAccount.ownerName}
           <RoleBadge role={currentAccount.role} />
@@ -216,7 +225,6 @@ function Dashboard({ account, onLogout }) {
         </button>
       </div>
 
-      {/* ---------- ERROR & MESSAGE ---------- */}
       {error && <p style={{ color: "red", fontWeight: "bold" }}>{error}</p>}
       {message && <p style={{ color: "green", fontWeight: "bold" }}>{message}</p>}
 
@@ -227,11 +235,95 @@ function Dashboard({ account, onLogout }) {
         <p><strong>Balance:</strong> €{currentAccount.balance}</p>
       </div>
 
+      {/* ---------- MANAGER: SEARCH TRANSACTIONS BY OWNER ---------- */}
+      {isManager && (
+        <div style={card}>
+          <h2>Search Transactions by Account Name</h2>
+          <input
+            type="text"
+            placeholder="Enter account owner name"
+            value={searchOwnerName}
+            onChange={(e) => setSearchOwnerName(e.target.value)}
+            style={{ padding: "8px", marginRight: "8px", width: "200px" }}
+          />
+          <button
+            onClick={fetchTransactionsByOwner}
+            style={{ ...button, backgroundColor: "#3498db", color: "white" }}
+          >
+            Show Transactions
+          </button>
+        </div>
+      )}
+
+      {/* ---------- TRANSACTION MODAL ---------- */}
+      {showTransactions && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "20px",
+              borderRadius: "10px",
+              width: "600px",
+              maxHeight: "80%",
+              overflowY: "auto",
+            }}
+          >
+            <h2>Transaction History for "{searchOwnerName}"</h2>
+
+            {transactions.length === 0 ? (
+              <p>No transactions found</p>
+            ) : (
+              <table width="100%">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map((t) => (
+                    <tr key={t.id}>
+                      <td>{t.id}</td>
+                      <td>{t.type}</td>
+                      <td>€{t.amount}</td>
+                      <td>{t.status}</td>
+                      <td>{new Date(t.createdAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            <button
+              onClick={() => setShowTransactions(false)}
+              style={{ ...button, backgroundColor: "#e74c3c", color: "white", marginTop: "15px" }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ---------- DEPOSIT / WITHDRAW ---------- */}
       {currentAccount.role === "CUSTOMER" && (
         <div style={card}>
           <h2>Deposit / Withdraw</h2>
-
           <input
             type="number"
             value={depositAmount}
@@ -239,26 +331,15 @@ function Dashboard({ account, onLogout }) {
             onChange={(e) => setDepositAmount(e.target.value)}
             style={{ padding: "10px", marginRight: "10px", width: "200px" }}
           />
-
           <button
             onClick={handleDeposit}
-            style={{
-              ...button,
-              backgroundColor: "#2ecc71",
-              color: "white",
-              marginRight: "8px",
-            }}
+            style={{ ...button, backgroundColor: "#2ecc71", color: "white", marginRight: "8px" }}
           >
             Deposit
           </button>
-
           <button
             onClick={handleWithdraw}
-            style={{
-              ...button,
-              backgroundColor: "#e67e22",
-              color: "white",
-            }}
+            style={{ ...button, backgroundColor: "#e67e22", color: "white" }}
           >
             Withdraw
           </button>
@@ -269,7 +350,6 @@ function Dashboard({ account, onLogout }) {
       {isStaff && pendingTransactions.length > 0 && (
         <div style={card}>
           <h2>Pending Transactions</h2>
-
           <table width="100%">
             <thead>
               <tr>
@@ -280,17 +360,12 @@ function Dashboard({ account, onLogout }) {
                 <th>Action</th>
               </tr>
             </thead>
-
             <tbody>
               {pendingTransactions.map((r) => (
                 <tr key={r.id}>
                   <td>{r.id}</td>
                   <td>
-                    <strong
-                      style={{
-                        color: r.type === "DEPOSIT" ? "#27ae60" : "#e67e22",
-                      }}
-                    >
+                    <strong style={{ color: r.type === "DEPOSIT" ? "#27ae60" : "#e67e22" }}>
                       {r.type}
                     </strong>
                   </td>
@@ -299,23 +374,13 @@ function Dashboard({ account, onLogout }) {
                   <td>
                     <button
                       onClick={() => handleApproveTransaction(r.id)}
-                      style={{
-                        ...button,
-                        backgroundColor: "#2ecc71",
-                        color: "white",
-                        marginRight: "5px",
-                      }}
+                      style={{ ...button, backgroundColor: "#2ecc71", color: "white", marginRight: "5px" }}
                     >
                       Approve
                     </button>
-
                     <button
                       onClick={() => handleRejectTransaction(r.id)}
-                      style={{
-                        ...button,
-                        backgroundColor: "#e74c3c",
-                        color: "white",
-                      }}
+                      style={{ ...button, backgroundColor: "#e74c3c", color: "white" }}
                     >
                       Reject
                     </button>

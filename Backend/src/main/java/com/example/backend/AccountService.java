@@ -43,7 +43,7 @@ public class AccountService {
         if (!accountRepo.existsById(id)) {
             return false;
         }
-        transactionRepo.deleteByAccountId(id);
+        transactionRepo.deleteByAccount_Id(id);
         accountRepo.deleteById(id);
         return true;
     }
@@ -67,6 +67,19 @@ public class AccountService {
                 .map(AccountResponse::new)
                 .toList();
     }
+
+    public List<Transaction> getTransactionsByOwner(String ownerName, Long managerId) {
+        Account manager = getAccount(managerId);
+        if (manager.getRole() != Role.MANAGER) {
+            throw new RuntimeException("Access denied");
+        }
+        Account targetAccount = getAccountByOwner(ownerName);
+        if (targetAccount == null) {
+            throw new RuntimeException("Account not found");
+        }
+        return transactionRepo.findByAccount_Id(targetAccount.getId());
+    }
+
     
     //--DEPOSITS--
 

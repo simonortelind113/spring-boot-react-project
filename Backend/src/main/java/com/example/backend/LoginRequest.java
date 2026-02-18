@@ -2,10 +2,8 @@ package com.example.backend;
 import jakarta.validation.constraints.NotBlank;
 
 public class LoginRequest {
-    
     @NotBlank
     private String ownerName;
-
     @NotBlank
     private String password;
     

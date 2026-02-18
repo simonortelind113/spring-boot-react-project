@@ -12,15 +12,12 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /* Target account (used for deposit & withdraw) */
     @ManyToOne
     private Account account;
 
-    /* DEPOSIT or WITHDRAW */
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 
-    /* PENDING, APPROVED, REJECTED */
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
     private BigDecimal amount;

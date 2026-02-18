@@ -2,10 +2,8 @@ package com.example.backend;
 import jakarta.validation.constraints.NotBlank;
 
 public class CreateAccountRequest {
-
     @NotBlank(message = "ownerName is required")
     private String ownerName;
-
     @NotBlank(message = "password is required")
     private String password;
 

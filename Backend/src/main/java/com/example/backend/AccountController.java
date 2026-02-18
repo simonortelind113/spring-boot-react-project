@@ -58,7 +58,7 @@ public class AccountController {
 
     @GetMapping("/{id}/transactions")
     public List<Transaction> getTransactions(@PathVariable Long id) {
-        return transactionRepository.findByAccountId(id);
+        return transactionRepository.findByAccount_Id(id);
     }
     
     @GetMapping
@@ -66,7 +66,13 @@ public class AccountController {
         List<AccountResponse> response = service.getAllAccountsAdmin(adminId);
         return ResponseEntity.ok(response);
     }
-    
+
+    @GetMapping("/transactions-by-owner")
+    public List<Transaction> getTransactionsByOwner(
+        @RequestParam String ownerName,
+        @RequestParam Long managerId) {
+        return service.getTransactionsByOwner(ownerName, managerId);
+    }
 
     //--DEPOSIT--
     
