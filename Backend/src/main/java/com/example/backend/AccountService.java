@@ -35,7 +35,11 @@ public class AccountService {
     }
 
     @Transactional
-    public boolean deleteAccount(Long id) {
+    public boolean deleteAccount(Long id, Long adminId) {
+        Account performer = getAccount(adminId);
+        if (performer.getRole() != Role.MANAGER) {
+            throw new RuntimeException("Only managers can delete accounts");
+        }
         if (!accountRepo.existsById(id)) {
             return false;
         }
@@ -53,10 +57,17 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found"));
     }
 
-    public List<Account> getAllAccounts() {
-        return accountRepo.findAll();
+    public List<AccountResponse> getAllAccountsAdmin(Long adminId) {
+        Account requester = getAccount(adminId);
+        if (requester.getRole() != Role.MANAGER) {
+            throw new RuntimeException("Only managers can view all accounts");
+        }
+        return accountRepo.findAll()
+                .stream()
+                .map(AccountResponse::new)
+                .toList();
     }
-
+    
     //--DEPOSITS--
 
     public Transaction createDepositRequest(

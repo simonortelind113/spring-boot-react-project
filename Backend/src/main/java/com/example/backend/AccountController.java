@@ -2,7 +2,6 @@ package com.example.backend;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,7 +14,7 @@ public class AccountController {
     private final AccountService service;
     private final TransactionRepository transactionRepository;
 
-    public AccountController(AccountService service, TransactionRepository transactionRepository, BCryptPasswordEncoder passwordEncoder) {
+    public AccountController(AccountService service, TransactionRepository transactionRepository) {
         this.service = service;
         this.transactionRepository = transactionRepository;
     }
@@ -41,12 +40,7 @@ public class AccountController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAccount(@PathVariable Long id, @RequestParam Long adminId) {
-        Account performer = service.getAccount(adminId);
-        if (performer.getRole() != Role.MANAGER) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Only managers can delete accounts.");
-        }
-        boolean deleted = service.deleteAccount(id);
+        boolean deleted = service.deleteAccount(id, adminId);
         return deleted ? ResponseEntity.ok().build()
                     : ResponseEntity.notFound().build();
     }
@@ -69,11 +63,7 @@ public class AccountController {
     
     @GetMapping
     public ResponseEntity<List<AccountResponse>> getAllAccounts(@RequestParam Long adminId) {
-        Account requester = service.getAccount(adminId);
-        if (requester.getRole() != Role.MANAGER) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-        List<AccountResponse> response = service.getAllAccounts().stream().map(AccountResponse::new).toList();
+        List<AccountResponse> response = service.getAllAccountsAdmin(adminId);
         return ResponseEntity.ok(response);
     }
     
